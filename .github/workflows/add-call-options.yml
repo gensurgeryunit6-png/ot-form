@@ -29,11 +29,6 @@ jobs:
           if old_row not in s:
               raise SystemExit('Target OT row pattern not found')
           s = s.replace(old_row, new_row, 3)
-          old_opd = '<td class="call-links">${r.mobile_1?`<a href="tel:${esc(r.mobile_1)}"><i class="fas fa-phone"></i> ${esc(r.mobile_1)}</a>`:'' }${r.mobile_2?`<a href="tel:${esc(r.mobile_2)}"><i class="fas fa-phone"></i> ${esc(r.mobile_2)}</a>`:''}</td>'
-          # Exact OPD template varies in whitespace; use the known current form.
-          old_opd = '<td class="call-links">${r.mobile_1?`<a href="tel:${esc(r.mobile_1)}"><i class="fas fa-phone"></i> ${esc(r.mobile_1)}</a>`:'' }${r.mobile_2?`<a href="tel:${esc(r.mobile_2)}"><i class="fas fa-phone"></i> ${esc(r.mobile_2)}</a>`:''}</td>'
-          if old_opd in s:
-              s = s.replace(old_opd, '<td class="call-links">${r.mobile_1?`<a class="call-action" href="tel:${esc(r.mobile_1)}"><i class="fas fa-phone"></i> ${esc(r.mobile_1)} · Call</a>`:'' }${r.mobile_2?`<a class="call-action" href="tel:${esc(r.mobile_2)}"><i class="fas fa-phone"></i> ${esc(r.mobile_2)} · Call</a>`:''}</td>', 1)
           s += '\n<span class="call-options-added"></span>\n'
           p.write_text(s)
           PY
