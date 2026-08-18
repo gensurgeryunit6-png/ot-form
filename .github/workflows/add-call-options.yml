@@ -1,0 +1,46 @@
+name: Add mobile call options
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  patch:
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add call buttons to mobile columns
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text()
+          marker = 'class="call-options-added"'
+          if marker in s:
+              print('Call options already added')
+              raise SystemExit(0)
+          s = s.replace('</style>', '.call-cell{white-space:nowrap}.call-cell a{display:inline-flex;align-items:center;gap:5px;margin:2px 4px 2px 0}.call-cell .call-action{font-size:.68rem;padding:4px 7px;border-radius:7px;background:#dff5e6;color:#1f7a45;text-decoration:none;font-weight:700}.call-cell .call-action:hover{background:#c9eed5}.call-options-added{display:none}</style>', 1)
+          old_header = '<th>OP/IP No.</th><th>Ward</th>'
+          new_header = '<th>OP/IP No.</th><th>Mobile 1</th><th>Mobile 2</th><th>Ward</th>'
+          s = s.replace(old_header, new_header, 3)
+          old_row = '<td class="mono">${esc(r.op_ip_no)}</td><td>${esc(r.ward_bed)}</td>'
+          new_row = '<td class="mono">${esc(r.op_ip_no)}</td><td class="call-cell">${r.mobile_1?`<span>${esc(r.mobile_1)}</span> <a class="call-action" href="tel:${esc(r.mobile_1)}"><i class="fas fa-phone"></i> Call</a>`:`—`}</td><td class="call-cell">${r.mobile_2?`<span>${esc(r.mobile_2)}</span> <a class="call-action" href="tel:${esc(r.mobile_2)}"><i class="fas fa-phone"></i> Call</a>`:`—`}</td><td>${esc(r.ward_bed)}</td>'
+          if old_row not in s:
+              raise SystemExit('Target OT row pattern not found')
+          s = s.replace(old_row, new_row, 3)
+          old_opd = '<td class="call-links">${r.mobile_1?`<a href="tel:${esc(r.mobile_1)}"><i class="fas fa-phone"></i> ${esc(r.mobile_1)}</a>`:'' }${r.mobile_2?`<a href="tel:${esc(r.mobile_2)}"><i class="fas fa-phone"></i> ${esc(r.mobile_2)}</a>`:''}</td>'
+          # Exact OPD template varies in whitespace; use the known current form.
+          old_opd = '<td class="call-links">${r.mobile_1?`<a href="tel:${esc(r.mobile_1)}"><i class="fas fa-phone"></i> ${esc(r.mobile_1)}</a>`:'' }${r.mobile_2?`<a href="tel:${esc(r.mobile_2)}"><i class="fas fa-phone"></i> ${esc(r.mobile_2)}</a>`:''}</td>'
+          if old_opd in s:
+              s = s.replace(old_opd, '<td class="call-links">${r.mobile_1?`<a class="call-action" href="tel:${esc(r.mobile_1)}"><i class="fas fa-phone"></i> ${esc(r.mobile_1)} · Call</a>`:'' }${r.mobile_2?`<a class="call-action" href="tel:${esc(r.mobile_2)}"><i class="fas fa-phone"></i> ${esc(r.mobile_2)} · Call</a>`:''}</td>', 1)
+          s += '\n<span class="call-options-added"></span>\n'
+          p.write_text(s)
+          PY
+      - name: Commit changes
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git diff --cached --quiet || git commit -m 'Add mobile call options [skip ci]'
+          git push
